@@ -1,22 +1,30 @@
-# Docker Image for Graphite & Statsd
+# Docker Image for Graphite Development
 
-## Get Graphite & Statsd running instantly
+## Get Graphite running instantly
 
-Graphite & Statsd can be complex to setup.
-This image will have you running & collecting stats in just a few minutes.
+Graphite can be complex to setup.
+This image will have you running & developping in just a few minutes.
+It's base on a running image [docker-graphite-statsd](https://github.com/hopsoft/docker-graphite-statsd) from Nathan Hopkins.
+
 
 ## Quick Start
 
 ```sh
-sudo docker run -d \
-  --name graphite \
-  -p 80:80 \
-  -p 2003:2003 \
-  -p 8125:8125/udp \
-  hopsoft/graphite-statsd
+sudo docker build -t duff/graphite-dev .
+
+docker run -t -i --name graphite-dev \
+        -v /home/GROUPEVSC/guillaume_dufour/devhome/working_directory/graphite/webapp:/opt/graphite/webapp \
+        -v /home/GROUPEVSC/guillaume_dufour/devhome/working_directory/graphite/graphite-web:/usr/local/src/graphite-web \
+        -p 8000:8000 \
+        duff/graphite-dev /bin/bash
 ```
 
-This starts a Docker container named: **graphite**
+This starts a Docker container named: **graphite-dev**
+Now, if you want to run the unit test, launch:
+
+```sh
+tox -e py27-django17
+```
 
 That's it, you're done ... almost.
 
@@ -34,6 +42,7 @@ That's it, you're done ... almost.
 |   80 |        80 | nginx   |
 | 2003 |      2003 | carbon  |
 | 8125 |      8125 | statsd  |
+| 8000 |      8000 | webapp  |
 
 ### Mounted Volumes
 
