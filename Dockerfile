@@ -1,9 +1,9 @@
 FROM phusion/baseimage:0.9.14
 MAINTAINER Nathan Hopkins <natehop@gmail.com>
+MAINTAINER Guillaume Dufour <guillaume.duff@gmail.com>
 
 #RUN echo deb http://archive.ubuntu.com/ubuntu $(lsb_release -cs) main universe > /etc/apt/sources.list.d/universe.list
-RUN apt-get -y update\
- && apt-get -y upgrade
+RUN apt-get -y update
 
 # dependencies
 RUN apt-get -y --force-yes install vim\
@@ -19,36 +19,41 @@ RUN apt-get -y --force-yes install vim\
  libcairo2-dev\
  python-cairo\
  pkg-config\
- nodejs
+ nodejs\
+ libffi-dev\
+ python-tox
 
-# python dependencies
-RUN pip install django==1.3\
- python-memcached==1.53\
+ # we add python dependencies manually because requirements doesn't fix gunicorn version
+RUN pip install Django>=1.4\
+ Twisted==11.1.0\
+ python-memcached==1.47\
+ txAMQP==0.4\
+ simplejson==2.1.6\
  django-tagging==0.3.1\
- whisper==0.9.12\
- twisted==11.1.0\
- txAMQP==0.6.2
+ gunicorn==19.1\
+ pytz\
+ pyparsing==1.5.7\
+ cairocffi\
+ git+git://github.com/graphite-project/whisper.git#egg=whisper\
+ git+git://github.com/graphite-project/ceres.git#egg=ceres
 
 # install graphite
-RUN git clone -b 0.9.12 https://github.com/graphite-project/graphite-web.git /usr/local/src/graphite-web
+RUN git clone https://github.com/graphite-project/graphite-web.git /usr/local/src/graphite-web/
 WORKDIR /usr/local/src/graphite-web
+# remove requirements because gunicorn tar 19.1.1 doen't compile on python 2.7
+#RUN pip install -r requirements.txt
 RUN python ./setup.py install
-ADD scripts/local_settings.py /opt/graphite/webapp/graphite/local_settings.py
-ADD conf/graphite/ /opt/graphite/conf/
+RUN cp /opt/graphite/webapp/graphite/local_settings.py.example /opt/graphite/webapp/graphite/local_settings.py
 
 # install whisper
-RUN git clone -b 0.9.12 https://github.com/graphite-project/whisper.git /usr/local/src/whisper
+RUN git clone https://github.com/graphite-project/whisper.git /usr/local/src/whisper
 WORKDIR /usr/local/src/whisper
 RUN python ./setup.py install
 
 # install carbon
-RUN git clone -b 0.9.12 https://github.com/graphite-project/carbon.git /usr/local/src/carbon
+RUN git clone https://github.com/graphite-project/carbon.git /usr/local/src/carbon
 WORKDIR /usr/local/src/carbon
 RUN python ./setup.py install
-
-# install statsd
-RUN git clone -b v0.7.2 https://github.com/etsy/statsd.git /opt/statsd
-ADD conf/statsd/config.js /opt/statsd/config.js
 
 # config nginx
 RUN rm /etc/nginx/sites-enabled/default
@@ -75,7 +80,8 @@ RUN apt-get clean\
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # defaults
-EXPOSE 80:80 2003:2003 8125:8125/udp
+EXPOSE 8000:8000 80:80 2003:2003 8125:8125/udp
 VOLUME ["/opt/graphite", "/etc/nginx", "/opt/statsd", "/etc/logrotate.d", "/var/log"]
 ENV HOME /root
-CMD ["/sbin/my_init"]
+WORKDIR /usr/local/src/graphite-web
+CMD ["tox -e py27-django17"]
