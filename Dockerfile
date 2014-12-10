@@ -63,7 +63,10 @@ RUN ln -s /etc/nginx/sites-available/graphite.conf /etc/nginx/sites-enabled/grap
 
 # init django admin
 ADD scripts/django_admin_init.exp /usr/local/bin/django_admin_init.exp
-RUN /usr/local/bin/django_admin_init.exp
+#RUN /usr/local/bin/django_admin_init.exp
+#spawn python /opt/graphite/webapp/graphite/manage.py syncdb
+#python: can't open file '/opt/graphite/webapp/graphite/manage.py': [Errno 2] No such file or directory
+
 
 # logging support
 RUN mkdir -p /var/log/carbon /var/log/graphite /var/log/nginx
@@ -84,4 +87,4 @@ EXPOSE 8000:8000 80:80 2003:2003 8125:8125/udp
 VOLUME ["/opt/graphite", "/etc/nginx", "/opt/statsd", "/etc/logrotate.d", "/var/log"]
 ENV HOME /root
 WORKDIR /usr/local/src/graphite-web
-CMD ["tox -e py27-django17"]
+CMD ["/sbin/my_init"]
